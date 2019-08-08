@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import org.horiga.study.webapp.model.TestEntity;
 import org.horiga.study.webapp.testcontainers.MySqlDockerComposeContextInitializer;
+import org.horiga.study.webapp.testcontainers.RedisClusterDockerContainerContextInitializer;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,13 +17,17 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
 @ActiveProfiles("test")
-@ContextConfiguration(initializers = MySqlDockerComposeContextInitializer.class)
+@ContextConfiguration(initializers = {
+        MySqlDockerComposeContextInitializer.class,
+        RedisClusterDockerContainerContextInitializer.class
+})
 public class TestServiceTest {
 
-    @Autowired TestService service;
+    @Autowired
+    TestService service;
 
     @Test
-    public void test() {
+    public void mysql() {
         // test select with initial csv data
         Assertions.assertFalse(service.entities().isEmpty(), "must not entity is empty");
 
@@ -35,5 +40,13 @@ public class TestServiceTest {
         Assertions.assertEquals("horiga", entity.get().getName());
         Assertions.assertEquals("O", entity.get().getType());
         Assertions.assertTrue(service.entities().size() > 2);
+    }
+
+    @Test
+    public void redis() {
+        service.setValue("foo", "bar");
+        final Optional<String> value = service.getValue("foo");
+        Assertions.assertTrue(value.isPresent());
+        Assertions.assertEquals("bar", value.get());
     }
 }
